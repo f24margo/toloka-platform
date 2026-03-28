@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f8f5f0;
+            color: #2d2d2d;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2d6a4f, #40916c);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+        .header p { font-size: 13px; opacity: 0.85; }
+
+        .add-btn {
+            display: block;
+            width: calc(100% - 32px);
+            max-width: 480px;
+            margin: 16px auto;
+            background: #f77f00;
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .add-btn:hover { background: #e06c00; }
+
+        .filters {
+            display: flex;
+            gap: 8px;
+            padding: 0 16px 16px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .filters::-webkit-scrollbar { display: none; }
+
+        .filter-btn {
+            white-space: nowrap;
+            background: white;
+            border: 2px solid #e0d8cc;
+            border-radius: 20px;
+            padding: 7px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #555;
+            transition: 0.2s;
+        }
+
+        .filter-btn.active {
+            background: #2d6a4f;
+            border-color: #2d6a4f;
+            color: white;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            padding: 0 16px 16px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            transition: transform 0.2s;
+        }
+
+        .card:hover { transform: translateY(-2px); }
+
+        .card-photo {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background: #f0ebe3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+
+        .card-photo img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+        }
+
+        .card-body { padding: 14px; }
+
+        .card-category {
+            display: inline-block;
+            border-radius: 8px;
+            padding: 3px 10px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .cat-продам { background: #fff3e0; color: #e65100; }
+        .cat-віддам { background: #e8f5e9; color: #2d6a4f; }
+        .cat-послуги { background: #e3f2fd; color: #1565c0; }
+        .cat-новини { background: #fce4ec; color: #c62828; }
+        .cat-інше { background: #f3e5f5; color: #6a1b9a; }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            line-height: 1.3;
+        }
+
+        .card-desc {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.5;
+            margin-bottom: 10px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 10px;
+            border-top: 1px solid #f0ebe3;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .card-author { font-weight: 600; color: #555; }
+
+        .empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+            grid-column: 1/-1;
+        }
+
+        .empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+        .form-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .form-overlay.open { display: flex; }
+
+        .form-card {
+            background: white;
+            border-radius: 24px;
+            width: 92%;
+            max-width: 420px;
+            max-height: 92vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .form-header {
+            background: linear-gradient(135deg, #2d6a4f, #40916c);
+            padding: 18px 20px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+        }
+
+        .form-header h2 { font-size: 17px; font-weight: 700; }
+
+        .close-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .form-body { padding: 20px; }
+
+        .form-group { margin-bottom: 14px; }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 6px;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            border: 2px solid #e8e0d8;
+            border-radius: 12px;
+            padding: 11px 14px;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            background: #fafaf8;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus { border-color: #40916c; }
+
+        .form-group textarea { min-height: 90px; resize: none; }
+
+        .btn-upload {
+            width: 100%;
+            background: #e3f2fd;
+            color: #1565c0;
+            border: 2px dashed #90caf9;
+            border-radius: 12px;
+            padding: 11px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .photo-thumbs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .photo-thumb {
+            position: relative;
+            width: 64px; height: 64px;
+        }
+
+        .photo-thumb img {
+            width: 64px; height: 64px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .photo-thumb .remove {
+            position: absolute;
+            top: -4px; right: -4px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 18px; height: 18px;
+            font-size: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .photo-count {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 10px;
+        }
+
+        .upload-progress {
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 13px;
+            color: #166534;
+            margin-bottom: 10px;
+            display: none;
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: #f77f00;
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+
+        .btn-submit:disabled { background: #ccc; cursor: not-allowed; }
+
+        .success-msg {
+            text-align: center;
+            padding: 30px 20px;
+            display: none;
+        }
+
+        .success-msg.show { display: block; }
+        .success-icon { font-size: 56px; margin-bottom: 12px; }
+
+        @media (max-width: 480px) {
+            .cards { grid-template-columns: 1fr; }
+            .header h1 { font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🌱 Дошка оголошень</h1>
+    <p id="communityName">Толока • Оголошення громади</p>
+</div>
+
+<button class="add-btn" onclick="openForm()" id="addBtn" style="display:none">
+    + Додати оголошення
+</button>
+
+<div class="filters">
+    <button class="filter-btn active" onclick="filterCards('all', this)">🌿 Всі</button>
+    <button class="filter-btn" onclick="filterCards('Продам', this)">🥕 Продам</button>
+    <button class="filter-btn" onclick="filterCards('Віддам даром', this)">🎁 Віддам даром</button>
+    <button class="filter-btn" onclick="filterCards('Послуги', this)">🔧 Послуги</button>
+    <button class="filter-btn" onclick="filterCards('Новини/Події', this)">📰 Новини</button>
+    <button class="filter-btn" onclick="filterCards('Інше', this)">💬 Інше</button>
+</div>
+
+<div class="cards" id="cardsContainer">
+    <div class="empty">
+        <div class="empty-icon">🌱</div>
+        <p>Завантаження оголошень...</p>
+    </div>
+</div>
+
+<div class="form-overlay" id="formOverlay">
+    <div class="form-card">
+        <div class="form-header">
+            <h2>Нове оголошення</h2>
+            <button class="close-btn" onclick="closeForm()">✕</button>
+        </div>
+
+        <div class="form-body" id="formBody">
+            <div class="form-group">
+                <label>Категорія *</label>
+                <select id="category">
+                    <option value="">— Оберіть категорію —</option>
+                    <option value="Продам">🥕 Продам</option>
+                    <option value="Віддам даром">🎁 Віддам даром</option>
+                    <option value="Послуги">🔧 Послуги</option>
+                    <option value="Новини/Події">📰 Новини/Події</option>
+                    <option value="Інше">💬 Інше</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Заголовок *</label>
+                <input type="text" id="titleInput"
+                    placeholder="Наприклад: Картопля своя 10 грн/кг">
+            </div>
+
+            <div class="form-group">
+                <label>Опис</label>
+                <textarea id="descInput"
+                    placeholder="Розкажіть детальніше..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Фото (до 3 штук)</label>
+                <label for="photoInput" class="btn-upload">
+                    📷 Додати фото
+                </label>
+                <input type="file" id="photoInput"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple style="display:none"
+                    onchange="handlePhotos(this)">
+                <div class="photo-thumbs" id="photoThumbs"></div>
+                <div class="photo-count" id="photoCount"></div>
+                <div class="upload-progress" id="uploadProgress"></div>
+            </div>
+
+            <button class="btn-submit" id="submitBtn" onclick="submitAnnouncement()">
+                📢 Опублікувати
+            </button>
+        </div>
+
+        <div class="success-msg" id="successMsg">
+            <div class="success-icon">✅</div>
+            <h3 style="margin-bottom:8px;">Опубліковано!</h3>
+            <p style="color:#666;font-size:14px;margin-bottom:20px;">
+                Ваше оголошення додано на дошку
+            </p>
+            <button class="btn-submit" onclick="closeForm()">Чудово!</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const CLOUDINARY_CLOUD = 'doshka';
+const CLOUDINARY_PRESET = 'doshka';
+const MAX_PHOTOS = 3;
+
+let selectedPhotos = [];
+let allAnnouncements = [];
+let currentFilter = 'all';
+let isLoggedIn = false;
+let isSubmitting = false;
+
+const categoryEmoji = {
+    'Продам': '🥕',
+    'Віддам даром': '🎁',
+    'Послуги': '🔧',
+    'Новини/Події': '📰',
+    'Інше': '💬'
+};
+
+const categoryClass = {
+    'Продам': 'cat-продам',
+    'Віддам даром': 'cat-віддам',
+    'Послуги': 'cat-послуги',
+    'Новини/Події': 'cat-новини',
+    'Інше': 'cat-інше'
+};
+
+// ПОВІДОМЛЕННЯ ВІД VELO
+window.addEventListener('message', (event) => {
+    const { type, data } = event.data;
+
+    if (type === 'LOAD_ANNOUNCEMENTS') {
+        allAnnouncements = data || [];
+        renderCards(allAnnouncements);
+    }
+
+    if (type === 'SET_USER') {
+        isLoggedIn = data.isLoggedIn;
+        document.getElementById('addBtn').style.display = isLoggedIn ? 'block' : 'none';
+    }
+
+    if (type === 'ANNOUNCEMENT_SAVED') {
+        showSuccess();
+    }
+});
+
+// РЕНДЕР КАРТОЧОК
+function renderCards(items) {
+    const container = document.getElementById('cardsContainer');
+    const filtered = currentFilter === 'all'
+        ? items
+        : items.filter(i => i.category === currentFilter);
+
+    if (filtered.length === 0) {
+        container.innerHTML = `
+            <div class="empty">
+                <div class="empty-icon">🌱</div>
+                <p>Оголошень поки немає.<br>Будьте першим!</p>
+            </div>`;
+        return;
+    }
+
+    container.innerHTML = filtered.map(item => {
+        const photos = item.photos
+            ? item.photos.split(',').map(u => u.trim()).filter(Boolean)
+            : [];
+        const firstPhoto = photos[0];
+        const emoji = categoryEmoji[item.category] || '💬';
+        const catClass = categoryClass[item.category] || 'cat-інше';
+        const date = item.createdDate
+            ? new Date(item.createdDate).toLocaleDateString('uk-UA')
+            : '';
+
+        return `
+        <div class="card">
+            <div class="card-photo">
+                ${firstPhoto
+                    ? `<img src="${firstPhoto}" alt="${item.title}" loading="lazy">`
+                    : `<span>${emoji}</span>`
+                }
+            </div>
+            <div class="card-body">
+                <span class="card-category ${catClass}">${item.category || 'Інше'}</span>
+                <div class="card-title">${item.title || ''}</div>
+                <div class="card-desc">${item.description || ''}</div>
+                <div class="card-footer">
+                    <span class="card-author">👤 ${item.authorName || 'Анонім'}</span>
+                    <span>${date}</span>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ФІЛЬТР
+function filterCards(category, btn) {
+    currentFilter = category;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderCards(allAnnouncements);
+}
+
+// ФОРМА
+function openForm() {
+    if (!isLoggedIn) {
+        alert('Будь ласка, увійдіть щоб додати оголошення');
+        return;
+    }
+    document.getElementById('formOverlay').classList.add('open');
+    document.getElementById('formBody').style.display = 'block';
+    document.getElementById('successMsg').classList.remove('show');
+}
+
+function closeForm() {
+    document.getElementById('formOverlay').classList.remove('open');
+    setTimeout(resetForm, 300);
+}
+
+function resetForm() {
+    isSubmitting = false;
+    selectedPhotos = [];
+    document.getElementById('category').value = '';
+    document.getElementById('titleInput').value = '';
+    document.getElementById('descInput').value = '';
+    document.getElementById('photoThumbs').innerHTML = '';
+    document.getElementById('photoCount').textContent = '';
+    document.getElementById('uploadProgress').style.display = 'none';
+    document.getElementById('submitBtn').disabled = false;
+    document.getElementById('submitBtn').textContent = '📢 Опублікувати';
+}
+
+// ФОТО
+function handlePhotos(input) {
+    const files = Array.from(input.files);
+    const remaining = MAX_PHOTOS - selectedPhotos.length;
+
+    if (remaining <= 0) {
+        alert(`Максимум ${MAX_PHOTOS} фото`);
+        input.value = '';
+        return;
+    }
+
+    files.slice(0, remaining).forEach(file => {
+        if (file.size > 10 * 1024 * 1024) {
+            alert(`${file.name} занадто великий. Максимум 10MB`);
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            selectedPhotos.push({
+                base64: e.target.result,
+                id: Date.now() + Math.random()
+            });
+            renderThumbs();
+        };
+        reader.readAsDataURL(file);
+    });
+    input.value = '';
+}
+
+function removePhoto(id) {
+    selectedPhotos = selectedPhotos.filter(p => p.id !== id);
+    renderThumbs();
+}
+
+function renderThumbs() {
+    const container = document.getElementById('photoThumbs');
+    const count = document.getElementById('photoCount');
+
+    container.innerHTML = selectedPhotos.map(p => `
+        <div class="photo-thumb">
+            <img src="${p.base64}">
+            <button class="remove" onclick="removePhoto(${p.id})">✕</button>
+        </div>
+    `).join('');
+
+    count.textContent = selectedPhotos.length > 0
+        ? `Додано: ${selectedPhotos.length} / ${MAX_PHOTOS}`
+        : '';
+}
+
+// ЗАВАНТАЖЕННЯ ФОТО В CLOUDINARY НАПРЯМУ З БРАУЗЕРА
+async function uploadPhoto(base64) {
+    const blob = await fetch(base64).then(r => r.blob());
+    
+    const formData = new FormData();
+    formData.append('file', blob, 'photo.jpg');
+    formData.append('upload_preset', CLOUDINARY_PRESET);
+
+    const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`,
+        { method: 'POST', body: formData }
+    );
+
+    const result = await response.json();
+    console.log('Cloudinary result:', result);
+
+    if (result.secure_url) {
+        return result.secure_url;
+    } else {
+        throw new Error(result.error?.message || 'Upload failed');
+    }
+}
+
+// ВІДПРАВКА
+async function submitAnnouncement() {
+    if (isSubmitting) return;
+
+    const category = document.getElementById('category').value;
+    const title = document.getElementById('titleInput').value.trim();
+    const desc = document.getElementById('descInput').value.trim();
+
+    if (!category) { alert('Оберіть категорію'); return; }
+    if (title.length < 3) { alert('Введіть заголовок (мінімум 3 символи)'); return; }
+
+    isSubmitting = true;
+    const btn = document.getElementById('submitBtn');
+    const progress = document.getElementById('uploadProgress');
+    btn.disabled = true;
+
+    // Завантажуємо фото напряму в Cloudinary
+    let photoUrls = [];
+
+    if (selectedPhotos.length > 0) {
+        progress.style.display = 'block';
+
+        for (let i = 0; i < selectedPhotos.length; i++) {
+            btn.textContent = `⏳ Фото ${i + 1}/${selectedPhotos.length}...`;
+            progress.textContent = `☁️ Завантажуємо фото ${i + 1} з ${selectedPhotos.length}...`;
+
+            try {
+                const url = await uploadPhoto(selectedPhotos[i].base64);
+                photoUrls.push(url);
+                console.log(`✅ Фото ${i + 1}:`, url);
+            } catch (err) {
+                console.error(`❌ Фото ${i + 1}:`, err.message);
+            }
+        }
+
+        progress.textContent = `✅ Фото завантажено: ${photoUrls.length}`;
+    }
+
+    btn.textContent = '⏳ Публікуємо...';
+
+    // Відправляємо в Velo з готовими URL
+    window.parent.postMessage({
+        type: 'SUBMIT_ANNOUNCEMENT',
+        data: {
+            category,
+            title,
+            description: desc,
+            photos: photoUrls
+        }
+    }, '*');
+}
+
+function showSuccess() {
+    document.getElementById('formBody').style.display = 'none';
+    document.getElementById('successMsg').classList.add('show');
+    window.parent.postMessage({ type: 'GET_ANNOUNCEMENTS' }, '*');
+}
+
+// ПОВІДОМЛЯЄМО ЩО IFRAME ГОТОВИЙ
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        window.parent.postMessage({ type: 'IFRAME_READY' }, '*');
+    }, 500);
+});
+</script>
+</body>
+</html>
